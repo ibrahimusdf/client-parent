@@ -58,7 +58,7 @@ socket.on('initial_locations', (locations) => {
   });
 
   if (Object.keys(markers).length > 0) {
-    const group = new L.featureGroup(Object.values(markers));
+    const group = L.featureGroup(Object.values(markers));
     map.fitBounds(group.getBounds());
   }
 });
