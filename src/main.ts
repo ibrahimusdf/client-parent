@@ -2,7 +2,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { io } from 'socket.io-client';
 
-const SERVER_URL = 'https://bang-j7w0.onrender.com';
+const SERVER_URL = 'https://bang-2.onrender.com';
 const socket = io(SERVER_URL);
 
 const appDiv = document.createElement('div');
