@@ -18,7 +18,7 @@ body, html {
 #side-panel {
   width: 350px;
   height: 100vh;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-right: 1px solid #e2e8f0;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
@@ -29,8 +29,65 @@ body, html {
   box-sizing: border-box;
 }
 
+/* Toggle button - hidden on desktop */
+.toggle-btn {
+  display: none;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  #side-panel {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 85%;
+    max-width: 320px;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    box-shadow: none;
+  }
+
+  #side-panel.panel-open {
+    transform: translateX(0);
+    box-shadow: 5px 0 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    left: 12px;
+    top: 12px;
+    width: 44px;
+    height: 44px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1001;
+    font-size: 20px;
+    cursor: pointer;
+    color: #1e293b;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+
+  .toggle-btn:active {
+    transform: scale(0.95);
+  }
+
+  .toggle-btn.btn-hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  #map {
+    width: 100vw;
+  }
+}
+
 .panel-header {
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 }
 
 .panel-header h1 {
@@ -43,11 +100,31 @@ body, html {
   gap: 10px;
 }
 
+/* Connection bar */
+.connection-bar {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  transition: all 0.3s;
+}
+
+.connection-connected {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.connection-disconnected {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
 .connection-section {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .input-group {
@@ -77,7 +154,13 @@ body, html {
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
+.button-row {
+  display: flex;
+  gap: 8px;
+}
+
 .btn-primary {
+  flex: 1;
   background-color: #3b82f6;
   color: white;
   border: none;
@@ -97,6 +180,28 @@ body, html {
   cursor: not-allowed;
 }
 
+/* Stats bar */
+.stats-bar {
+  display: flex;
+  gap: 16px;
+  padding: 10px 14px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.stat {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.stat-num {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* Children list */
 .children-list-container {
   flex: 1;
   overflow-y: auto;
@@ -106,7 +211,7 @@ body, html {
   font-size: 14px;
   font-weight: 600;
   color: #64748b;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .child-item {
@@ -118,11 +223,13 @@ body, html {
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   margin-bottom: 8px;
-  transition: transform 0.1s;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .child-item:hover {
   transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .child-info {
@@ -142,10 +249,11 @@ body, html {
 }
 
 .status-indicator {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   margin-right: 8px;
+  transition: all 0.3s;
 }
 
 .status-online {
@@ -157,13 +265,14 @@ body, html {
   background-color: #94a3b8;
 }
 
+/* Map */
 #map {
   flex: 1;
   height: 100vh;
   z-index: 1;
 }
 
-/* Custom Marker Styling */
+/* Custom Marker */
 .custom-marker {
   display: flex;
   align-items: center;
@@ -198,16 +307,11 @@ body, html {
 }
 
 @keyframes pulse {
-  0% {
-    transform: scale(1);
-    opacity: 0.8;
-  }
-  100% {
-    transform: scale(3);
-    opacity: 0;
-  }
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(3); opacity: 0; }
 }
 
+/* Popup */
 .custom-popup .leaflet-popup-content-wrapper {
   border-radius: 12px;
   padding: 0;
@@ -226,7 +330,31 @@ body, html {
   margin-bottom: 4px;
 }
 
+.popup-details {
+  margin-bottom: 8px;
+}
+
+.detail-row {
+  font-size: 13px;
+  color: #475569;
+  padding: 2px 0;
+}
+
 .popup-time {
   font-size: 11px;
   color: #64748b;
+  margin-top: 4px;
+}
+
+.popup-link {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.popup-link:hover {
+  text-decoration: underline;
 }
