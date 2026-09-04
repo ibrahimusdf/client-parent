@@ -180,6 +180,22 @@ body, html {
   cursor: not-allowed;
 }
 
+.btn-danger {
+  flex: 1;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-danger:hover {
+  background-color: #dc2626;
+}
+
 /* Stats bar */
 .stats-bar {
   display: flex;

@@ -4,7 +4,7 @@ import './style.css';
 import { io, Socket } from 'socket.io-client';
 
 const SERVER_URL = 'https://bang-2.onrender.com';
-const socket: Socket = io(SERVER_URL, { reconnection: true, reconnectionDelay: 3000 });
+const socket: Socket = io(SERVER_URL, { reconnection: true, reconnectionDelay: 3000, reconnectionAttempts: Infinity });
 
 const childState: Record<string, { lastSeen: number; status: 'online' | 'offline'; lat: number; lng: number }> = {};
 let currentFamilyId: string | null = null;
@@ -63,6 +63,12 @@ joinBtn.id = 'join-btn';
 joinBtn.className = 'btn-primary';
 joinBtn.textContent = 'Monitor Family';
 buttonRow.appendChild(joinBtn);
+
+const disconnectBtn = document.createElement('button');
+disconnectBtn.className = 'btn-danger';
+disconnectBtn.textContent = 'Disconnect';
+disconnectBtn.style.display = 'none';
+buttonRow.appendChild(disconnectBtn);
 
 connectionSection.appendChild(buttonRow);
 sidePanel.appendChild(connectionSection);
@@ -123,7 +129,7 @@ function fitMapToMarkers() {
   const coords = Object.values(childState).map(c => [c.lat, c.lng] as [number, number]);
   if (coords.length === 0) return;
   if (coords.length === 1) {
-    map.setView(coords[0], 15);
+    map.setView(coords[0], 16);
   } else {
     map.fitBounds(L.latLngBounds(coords), { padding: [50, 50] });
   }
@@ -163,8 +169,6 @@ function updateMarker(childId: string, lat: number, lng: number, status: 'online
 const childElements: Record<string, HTMLElement> = {};
 
 function updateChildListUI() {
-  const title = childrenListContainer.querySelector('.children-list-title') as HTMLElement;
-
   // Remove stale elements
   Object.keys(childElements).forEach(id => {
     if (!childState[id]) {
@@ -176,13 +180,11 @@ function updateChildListUI() {
   // Update or create elements
   Object.entries(childState).forEach(([childId, state]) => {
     if (childElements[childId]) {
-      // Update existing
       const el = childElements[childId];
       el.querySelector('.child-last-seen')!.textContent = `Last seen: ${new Date(state.lastSeen).toLocaleTimeString()}`;
       const dot = el.querySelector('.status-indicator')!;
       dot.className = `status-indicator ${state.status === 'online' ? 'status-online' : 'status-offline'}`;
     } else {
-      // Create new
       const item = document.createElement('div');
       item.className = 'child-item';
       item.innerHTML = `
@@ -203,7 +205,6 @@ function updateChildListUI() {
     }
   });
 
-  // Update stats
   const online = Object.values(childState).filter(c => c.status === 'online').length;
   const statOnline = document.getElementById('stat-online');
   const statTotal = document.getElementById('stat-total');
@@ -235,33 +236,78 @@ function updateConnectionStatus(connected: boolean) {
   connectionBar.textContent = connected ? 'Connected to server' : 'Reconnecting...';
 }
 
+// --- MONITORING ---
+function joinSocket(familyId: string) {
+  socket.emit('join_family', { familyId, role: 'parent', userId: 'parent-1' });
+}
+
+function startMonitoring(familyId: string) {
+  currentFamilyId = familyId;
+  monitoring = true;
+
+  localStorage.setItem('familyId', familyId);
+  joinSocket(familyId);
+
+  if (!map) initMap();
+
+  inputGroup.style.display = 'none';
+  joinBtn.style.display = 'none';
+  disconnectBtn.style.display = 'block';
+  statsBar.style.display = 'flex';
+}
+
+function stopMonitoring() {
+  currentFamilyId = null;
+  monitoring = false;
+
+  localStorage.removeItem('familyId');
+
+  // Clear markers
+  Object.values(markers).forEach(m => m.remove());
+  Object.keys(markers).forEach(k => delete markers[k]);
+  Object.keys(childState).forEach(k => delete childState[k]);
+  Object.keys(childElements).forEach(k => {
+    childElements[k].remove();
+    delete childElements[k];
+  });
+
+  inputGroup.style.display = 'flex';
+  joinBtn.style.display = 'block';
+  disconnectBtn.style.display = 'none';
+  statsBar.style.display = 'none';
+
+  const familyInput = document.getElementById('family-id') as HTMLInputElement;
+  if (familyInput) familyInput.value = '';
+}
+
+// --- EVENT HANDLERS ---
+joinBtn.onclick = () => {
+  const familyInput = document.getElementById('family-id') as HTMLInputElement;
+  const familyId = familyInput.value.trim();
+  if (!familyId) {
+    alert('Please enter Family ID');
+    return;
+  }
+  startMonitoring(familyId);
+};
+
+disconnectBtn.onclick = () => stopMonitoring();
+
 // --- SOCKET EVENTS ---
-socket.on('connect', () => updateConnectionStatus(true));
+socket.on('connect', () => {
+  updateConnectionStatus(true);
+  // Re-join family on reconnect
+  if (currentFamilyId) {
+    joinSocket(currentFamilyId);
+  }
+});
+
 socket.on('disconnect', () => updateConnectionStatus(false));
 socket.on('connect_error', () => updateConnectionStatus(false));
 
 socket.on('error', (data: { message: string }) => {
   console.error('Server error:', data.message);
 });
-
-joinBtn.onclick = () => {
-  const familyIdInput = document.getElementById('family-id') as HTMLInputElement;
-  const familyId = familyIdInput.value.trim();
-  if (!familyId) {
-    alert('Please enter Family ID');
-    return;
-  }
-
-  currentFamilyId = familyId;
-  monitoring = true;
-  socket.emit('join_family', { familyId, role: 'parent', userId: 'parent-1' });
-
-  if (!map) initMap();
-  joinBtn.disabled = true;
-  joinBtn.textContent = 'Monitoring...';
-
-  statsBar.style.display = 'flex';
-};
 
 socket.on('initial_locations', (locations: any[]) => {
   if (!map) return;
@@ -290,3 +336,9 @@ socket.on('child_disconnected', (data: { childId: string }) => {
     updateChildListUI();
   }
 });
+
+// --- AUTO-START ---
+const savedFamilyId = localStorage.getItem('familyId');
+if (savedFamilyId) {
+  startMonitoring(savedFamilyId);
+}
